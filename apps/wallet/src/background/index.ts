@@ -108,3 +108,5 @@ NetworkEnv.on('changed', async (network) => {
         change: { network },
     });
 });
+
+console.log(Keyring);
