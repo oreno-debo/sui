@@ -97,12 +97,13 @@ async fn main() -> Result<()> {
             } else {
                 WorkloadConfiguration::Combined
             };
-            let workloads = workload_configuration
+
+            let proxy_workloads = workload_configuration
                 .configure(
                     benchmark_setup.primary_gas,
                     benchmark_setup.pay_coin,
                     benchmark_setup.pay_coin_type_tag,
-                    benchmark_setup.validator_proxy.clone(),
+                    benchmark_setup.validator_proxies.clone(),
                     &opts,
                     system_state_observer.clone(),
                 )
@@ -116,8 +117,7 @@ async fn main() -> Result<()> {
             let driver = BenchDriver::new(opts.stat_collection_interval, stress_stat_collection);
             driver
                 .run(
-                    workloads,
-                    benchmark_setup.validator_proxy.clone(),
+                    proxy_workloads,
                     system_state_observer,
                     &registry_clone,
                     show_progress,

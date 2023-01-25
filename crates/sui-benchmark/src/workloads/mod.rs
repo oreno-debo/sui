@@ -163,3 +163,25 @@ pub fn make_delegation_workload(
         })
     }
 }
+
+pub fn split_workload<T: Clone>(workload: &Vec<T>, n: usize) -> Vec<Vec<T>> {
+    let mut chunks = vec![vec![]; n];
+    let workload_len = workload.len();
+    if workload_len == 0 {
+        return chunks;
+    }
+    let remainder = workload_len % n;
+    if workload_len >= n {
+        let chunk_size = workload_len / n;
+        chunks = workload
+            .chunks_exact(chunk_size)
+            .map(|chunk| chunk.to_vec())
+            .collect::<Vec<Vec<T>>>();
+    }
+
+    // Distribute the remainder workload items among the first chunks
+    for (i, e) in workload.iter().skip(workload_len - remainder).enumerate() {
+        chunks[i].push(e.clone());
+    }
+    chunks
+}

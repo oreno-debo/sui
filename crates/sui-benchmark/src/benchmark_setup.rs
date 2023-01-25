@@ -38,8 +38,8 @@ pub struct BenchmarkSetup {
     // Coin to use for splitting and generating small gas coins
     pub pay_coin: Gas,
     pub pay_coin_type_tag: TypeTag,
-    // Validator endpoint proxy
-    pub validator_proxy: Arc<dyn ValidatorProxy + Send + Sync>,
+    // List of validator endpoint proxy
+    pub validator_proxies: Vec<Arc<dyn ValidatorProxy + Send + Sync>>,
 }
 
 impl Env {
@@ -168,7 +168,7 @@ impl Env {
                 keypair,
             ),
             pay_coin_type_tag: ttag,
-            validator_proxy: proxy,
+            validator_proxies: vec![proxy],
         })
     }
 
@@ -263,7 +263,7 @@ impl Env {
             ),
             pay_coin: (pay_coin.compute_object_reference(), pay_coin.owner, keypair),
             pay_coin_type_tag: ttag,
-            validator_proxy: proxy,
+            validator_proxies: vec![proxy],
         })
     }
 }
