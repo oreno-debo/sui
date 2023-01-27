@@ -23,6 +23,7 @@ import { Ed25519PublicKey } from '../cryptography/ed25519-publickey';
 import { Secp256k1PublicKey } from '../cryptography/secp256k1-publickey';
 import { Base64DataBuffer } from '../serialization/base64';
 import { BCS } from '@mysten/bcs';
+import { RpcApiVersion } from './version';
 
 export const TransactionDigest = string();
 export type TransactionDigest = Infer<typeof TransactionDigest>;
@@ -66,15 +67,16 @@ const TX_DIGEST_LENGTH = 32;
 /** Returns whether the tx digest is valid based on the serialization format */
 export function isValidTransactionDigest(
   value: string,
-  serializationFmt: 'base64' | 'base58'
+  version?: RpcApiVersion
 ): value is TransactionDigest {
   let buffer;
+  let SerializationFn: typeof Base58DataBuffer | typeof Base64DataBuffer =
+    Base58DataBuffer;
+  if (version?.major === 0 && version?.minor < 18)
+    SerializationFn = Base64DataBuffer;
+
   try {
-    if (serializationFmt === 'base58') {
-      buffer = new Base58DataBuffer(value);
-    } else {
-      buffer = new Base64DataBuffer(value);
-    }
+    buffer = new SerializationFn(value);
     return buffer.getLength() === TX_DIGEST_LENGTH;
   } catch (e) {
     return false;
