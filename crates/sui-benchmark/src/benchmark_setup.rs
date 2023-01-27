@@ -70,7 +70,7 @@ impl Env {
                     opts.genesis_blob_path.as_str(),
                     opts.use_fullnode_for_reconfig,
                     opts.use_fullnode_for_execution,
-                    opts.fullnode_rpc_address.clone(),
+                    opts.fullnode_rpc_addresses.clone(),
                 )
                 .await
             }
@@ -182,7 +182,7 @@ impl Env {
         genesis_blob_path: &str,
         use_fullnode_for_reconfig: bool,
         use_fullnode_for_execution: bool,
-        fullnode_rpc_address: Option<String>,
+        fullnode_rpc_address: Vec<String>,
     ) -> Result<BenchmarkSetup> {
         info!("Running benchmark setup in remote mode ..");
         std::thread::spawn(move || {
@@ -194,12 +194,12 @@ impl Env {
                 });
         });
 
-        let fullnode_rpc_url = fullnode_rpc_address.clone();
-        info!("Fullnode rpc url: {:?}", fullnode_rpc_url);
+        let fullnode_rpc_urls = fullnode_rpc_address.clone();
+        info!("Fullnode rpc urls: {:?}", fullnode_rpc_urls);
         let proxy: Arc<dyn ValidatorProxy + Send + Sync> = if use_fullnode_for_execution {
-            info!("Using FullNodeProxy: {:?}", fullnode_rpc_url);
+            info!("Using FullNodeProxy: {:?}", fullnode_rpc_urls);
             Arc::new(
-                FullNodeProxy::from_url(&fullnode_rpc_url.expect(
+                FullNodeProxy::from_url(&fullnode_rpc_urls.get(0).expect(
                     "fullnode-rpc-url is required when use-fullnode-for-execution is true",
                 ))
                 .await?,
@@ -208,7 +208,7 @@ impl Env {
             info!("Using LocalValidatorAggregatorProxy");
             let reconfig_fullnode_rpc_url =
                 if use_fullnode_for_reconfig {
-                    Some(fullnode_rpc_url.expect(
+                    Some(fullnode_rpc_urls.get(0).expect(
                         "fullnode-rpc-url is required when use-fullnode-for-reconfig is true",
                     ))
                 } else {
@@ -220,7 +220,7 @@ impl Env {
                 LocalValidatorAggregatorProxy::from_genesis(
                     genesis,
                     registry,
-                    reconfig_fullnode_rpc_url.as_deref(),
+                    reconfig_fullnode_rpc_url.as_deref().map(|x| &**x), // TODO(scale) properly fix this and other urls in the file
                 )
                 .await,
             )
