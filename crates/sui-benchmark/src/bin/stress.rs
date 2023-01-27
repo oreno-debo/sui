@@ -69,8 +69,10 @@ async fn main() -> Result<()> {
     let env = if opts.local { Env::Local } else { Env::Remote };
     let benchmark_setup = env.setup(cloned_barrier, &registry, &opts).await?;
     let system_state_observer = {
+        // Only need to get system state from one proxy as there is only one
+        // system state for the whole network.
         let mut system_state_observer =
-            SystemStateObserver::new(benchmark_setup.validator_proxy.clone());
+            SystemStateObserver::new(benchmark_setup.validator_proxies[0].clone());
         system_state_observer.reference_gas_price.changed().await?;
         eprintln!(
             "Found reference gas price from system state object = {:?}",

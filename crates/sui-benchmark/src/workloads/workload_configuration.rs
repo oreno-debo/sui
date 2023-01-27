@@ -406,7 +406,7 @@ pub async fn configure_combined_mode_helper(
             .init(
                 workload_init_gas,
                 proxies[i].clone(),
-                system_state_observe.clone(),
+                system_state_observer.clone(),
             )
             .await;
 
