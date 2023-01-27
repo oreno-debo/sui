@@ -306,6 +306,11 @@ impl Proposer {
 
     /// Compute the timeout value of the proposer.
     fn timeout_value(&self) -> Instant {
+        Instant::now() + self.timeout_duration()
+    }
+
+    /// Compute the duration for the proposer
+    fn timeout_duration(&self) -> Duration {
         match self.network_model {
             // In partial synchrony, if this node is going to be the leader of the next
             // round, we set a lower timeout value to increase its chance of committing
@@ -313,11 +318,11 @@ impl Proposer {
             NetworkModel::PartiallySynchronous
                 if self.committee.leader(self.round + 1) == self.name =>
             {
-                Instant::now() + self.max_header_delay / 2
+                self.max_header_delay / 2
             }
 
             // Otherwise we keep the default timeout value.
-            _ => Instant::now() + self.max_header_delay,
+            _ => self.max_header_delay,
         }
     }
 
@@ -390,7 +395,7 @@ impl Proposer {
         debug!("Dag starting at round {}", self.round);
         let mut advance = true;
 
-        let timer = sleep(self.max_header_delay);
+        let timer = sleep(self.timeout_duration());
         let header_resend_timeout = self
             .header_resend_timeout
             .unwrap_or(DEFAULT_HEADER_RESEND_TIMEOUT);
@@ -546,6 +551,14 @@ impl Proposer {
                             let _ = self.tx_narwhal_round_updates.send(self.round);
                             self.last_parents = parents;
 
+                            // we re-calculate the timeout to give the opportunity to the node
+                            // to propose earlier if it's a leader for the round
+                            // Reschedule the timer.
+                            let deadline = self.timeout_value();
+
+                            if timer.deadline() > deadline {
+                                timer.as_mut().reset(deadline);
+                            }
                         },
                         Ordering::Less => {
                             // Ignore parents from older rounds.
