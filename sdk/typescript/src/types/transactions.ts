@@ -270,6 +270,7 @@ export type TransactionQuery =
   | { ToAddress: SuiAddress };
 
 export type EmptySignInfo = object;
+export type AuthorityName = string;
 
 export const TransactionBytes = object({
   txBytes: string(),
