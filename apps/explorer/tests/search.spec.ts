@@ -8,7 +8,7 @@ import { faucet, mint } from './utils/localnet';
 async function search(page: Page, text: string) {
     const searchbar = page.getByTestId('search-input');
     await searchbar.fill(text);
-    const result = page.getByRole('option');
+    const result = await page.getByRole('option').first();
     await result.click();
 }
 
