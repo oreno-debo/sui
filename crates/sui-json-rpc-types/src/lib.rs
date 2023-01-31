@@ -377,7 +377,6 @@ pub enum SuiExecuteTransactionResponse {
     EffectsCert {
         certificate: SuiCertifiedTransaction,
         effects: SuiCertifiedTransactionEffects,
-        events: SuiTransactionEvents,
         // If the transaction is confirmed to be executed locally
         // before this response.
         confirmed_local_execution: bool,

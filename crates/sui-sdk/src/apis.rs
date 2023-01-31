@@ -493,14 +493,12 @@ impl QuorumDriver {
                 SuiExecuteTransactionResponse::EffectsCert {
                     certificate,
                     effects,
-                    events,
                     confirmed_local_execution,
                 },
             ) => TransactionExecutionResult {
                 tx_digest: certificate.transaction_digest,
                 tx_cert: certificate,
                 effects: effects.effects,
-                events,
                 confirmed_local_execution,
                 timestamp_ms: None,
             },
@@ -509,7 +507,6 @@ impl QuorumDriver {
                 SuiExecuteTransactionResponse::EffectsCert {
                     certificate,
                     effects,
-                    events,
                     confirmed_local_execution,
                 },
             ) => {
@@ -521,7 +518,6 @@ impl QuorumDriver {
                     tx_digest: certificate.transaction_digest,
                     tx_cert: certificate,
                     effects: effects.effects,
-                    events,
                     confirmed_local_execution,
                     timestamp_ms: None,
                 }
