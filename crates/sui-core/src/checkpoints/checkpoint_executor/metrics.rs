@@ -13,6 +13,7 @@ pub struct CheckpointExecutorMetrics {
     pub checkpoint_exec_errors: IntCounter,
     pub checkpoint_exec_epoch: IntGauge,
     pub checkpoint_transaction_count: Histogram,
+    pub checkpoint_datasync_latency: Histogram,
 }
 
 impl CheckpointExecutorMetrics {

@@ -18,7 +18,11 @@
 //! CheckpointExecutor enforces the invariant that if `run` returns successfully, we have reached the
 //! end of epoch. This allows us to use it as a signal for reconfig.
 
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use futures::stream::FuturesOrdered;
 use mysten_metrics::spawn_monitored_task;
@@ -149,7 +153,10 @@ impl CheckpointExecutor {
                     highest_executed = Some(checkpoint);
                 }
                 // Check for newly synced checkpoints from StateSync.
-                _ = self.mailbox.recv() => (),
+                Ok(checkpoint) = self.mailbox.recv() => {
+                    let latency = SystemTime::now() - checkpoint.timestamp();
+
+                }
             }
         }
     }
