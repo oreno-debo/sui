@@ -31,7 +31,12 @@ const initState: SearchDataType = {
 const querySearchParams = async (input: string, network: Network | string) => {
     const version = await rpc(network).getRpcApiVersion();
     let searchPromises = [];
-    if (isValidTransactionDigest(input, version)) {
+    if (
+        isValidTransactionDigest(
+            input,
+            version?.major === 0 && version?.minor < 18 ? 'base64' : 'base58'
+        )
+    ) {
         searchPromises.push(
             rpc(network)
                 .getTransactionWithEffects(input)
