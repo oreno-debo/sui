@@ -1,5 +1,21 @@
 # @mysten/wallet-adapter-unsafe-burner
 
+## 0.5.0
+
+### Minor Changes
+
+- 96e883fc1: Update wallet adapter and wallet standard to support passing through the desired request type.
+
+### Patch Changes
+
+- a8746d4e9: update SuiExecuteTransactionResponse
+- Updated dependencies [96e883fc1]
+- Updated dependencies [a8746d4e9]
+- Updated dependencies [57fc4dedd]
+- Updated dependencies [21781ba52]
+  - @mysten/wallet-adapter-base@0.5.0
+  - @mysten/sui.js@0.26.0
+
 ## 0.4.2
 
 ### Patch Changes

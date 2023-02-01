@@ -1,5 +1,16 @@
 # @mysten/sui.js
 
+## 0.26.0
+
+### Minor Changes
+
+- a8746d4e9: update SuiExecuteTransactionResponse
+- 21781ba52: Secp256k1 signs 64-bytes signature [r, s] instead of [r, s, v] with recovery id
+
+### Patch Changes
+
+- 57fc4dedd: Fix gas selection logic to take gas price into account
+
 ## 0.25.0
 
 ### Minor Changes
