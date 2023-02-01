@@ -3,10 +3,9 @@
 
 use crate::metrics::NetworkConnectionMetrics;
 use anemo::PeerId;
-use futures::SinkExt;
 use mysten_metrics::spawn_logged_monitored_task;
 use std::collections::HashMap;
-use std::sync::mpsc::Sender;
+use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 use tracing::error;
 
@@ -34,7 +33,7 @@ impl ConnectionMonitor {
             Self {
                 network,
                 connection_metrics,
-                peer_id_types
+                peer_id_types,
                 sender,
             }
             .run(),

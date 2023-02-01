@@ -6,6 +6,7 @@ use futures::future::select;
 use futures::future::Either;
 use futures::FutureExt;
 use itertools::Itertools;
+use narwhal_config::Committee as NarwhalCommittee;
 use narwhal_types::TransactionProto;
 use narwhal_types::TransactionsClient;
 use parking_lot::RwLockReadGuard;
@@ -18,6 +19,7 @@ use prometheus::{register_histogram_vec_with_registry, register_int_gauge_with_r
 use prometheus::{HistogramVec, IntCounter};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
+use std::collections::HashMap;
 use std::future::Future;
 use std::ops::Deref;
 use std::sync::atomic::AtomicU64;
@@ -36,8 +38,12 @@ use tokio::task::JoinHandle;
 use tokio::time;
 
 use mysten_metrics::spawn_monitored_task;
+use sui_simulator::anemo::PeerId;
+use sui_simulator::narwhal_network::connectivity::ConnectionStatus;
 use sui_types::base_types::AuthorityName;
 use sui_types::messages::ConsensusTransactionKind;
+use tokio::sync::mpsc::Receiver;
+use tokio::sync::Mutex;
 use tokio::time::Duration;
 use tracing::{debug, error, info, warn};
 
@@ -123,6 +129,53 @@ impl ConsensusAdapterMetrics {
 
     pub fn new_test() -> OptArcConsensusAdapterMetrics {
         None
+    }
+}
+
+pub struct ConnectionMonitorListener {
+    /// Receiver from the Connection Monitor
+    receiver: Receiver<(PeerId, ConnectionStatus)>,
+    /// Map to look up the connection statuses as a latency aid during submit to consensus
+    pub current_connection_statuses: Mutex<HashMap<AuthorityName, ConnectionStatus>>,
+    /// Map to populate the current connection statuses from the receiver
+    peer_id_to_authority_names: HashMap<PeerId, AuthorityName>,
+}
+
+impl ConnectionMonitorListener {
+    async fn spawn(
+        receiver: Receiver<(PeerId, ConnectionStatus)>,
+        peer_id_to_authority_names: HashMap<PeerId, AuthorityName>,
+    ) -> (
+        Mutex<HashMap<AuthorityName, ConnectionStatus>>,
+        JoinHandle<()>,
+    ) {
+        let mut connection_statuses = HashMap::new();
+        for (_, authority_name) in peer_id_to_authority_names.iter() {
+            connection_statuses.insert(authority_name.clone(), ConnectionStatus::Connected);
+        }
+        let current_connection_statuses = Mutex::new(connection_statuses);
+        (
+            current_connection_statuses,
+            spawn_monitored_task!(Self {
+                receiver,
+                current_connection_statuses,
+                peer_id_to_authority_names
+            }
+            .run()),
+        )
+    }
+
+    async fn run(&mut self) {
+        loop {
+            match self.receiver.recv().await {
+                Some((peer_id, connection_status)) => {
+                    let mut current_connection_statuses =
+                        self.current_connection_statuses.lock().await;
+                    *current_connection_statuses.insert(peer_id, connection_status);
+                }
+                None => return,
+            }
+        }
     }
 }
 

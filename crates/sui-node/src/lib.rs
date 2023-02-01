@@ -13,6 +13,7 @@ use checkpoint_executor::CheckpointExecutor;
 use futures::TryFutureExt;
 use mysten_metrics::{spawn_monitored_task, RegistryService};
 use mysten_network::server::ServerBuilder;
+use narwhal_config::Committee as NarwhalCommittee;
 use narwhal_network::metrics::MetricsMakeCallbackHandler;
 use narwhal_network::metrics::{NetworkConnectionMetrics, NetworkMetrics};
 use prometheus::Registry;
@@ -437,6 +438,25 @@ impl SuiNode {
         let state_sync_handle = state_sync.start(p2p_network.clone());
         Ok((p2p_network, discovery_handle, state_sync_handle))
     }
+
+    fn narwhal_committee(state: Arc<AuthorityState>) -> NarwhalCommittee {
+        let system_state = state
+            .get_sui_system_state_object()
+            .expect("Reading Sui system state object cannot fail");
+        system_state.get_current_epoch_narwhal_committee()
+    }
+
+    fn get_peer_ids(state: Arc<AuthorityState>) -> HashMap<anemo::PeerId, String> {
+        if state.is_fullnode() {
+            return HashMap::default()
+        }
+        
+        let result = HashMap::new();
+        let narwhal_committee = Self::narwhal_committee(state);
+        for (n, )
+    }
+
+    
 
     async fn construct_validator_components(
         config: &NodeConfig,
