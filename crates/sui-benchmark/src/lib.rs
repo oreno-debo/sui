@@ -326,6 +326,7 @@ impl ValidatorProxy for FullNodeProxy {
                     return Ok((tx_cert, effects));
                 }
                 Err(err) => {
+                    println!("Transaction failed with err: {:?}", err);
                     error!(
                         ?tx_digest,
                         retry_cnt, "Transaction failed with err: {:?}", err

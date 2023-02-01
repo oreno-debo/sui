@@ -121,6 +121,9 @@ pub async fn split_coin_and_pay(
     let created_coins: Vec<ObjectRef> = effects.created().into_iter().map(|c| c.0).collect();
     assert_eq!(created_coins.len(), split_amounts.len());
     let recipient_addresses: Vec<SuiAddress> = coin_configs.iter().map(|g| g.address).collect();
+    // for created_coin in created_coins.iter() {
+    //     print!("{} ", created_coin.0);
+    // }
     let verified_tx = make_pay_tx(
         created_coins,
         gas.1.get_owner_address()?,
@@ -164,7 +167,7 @@ pub async fn generate_all_gas_for_test(
     workload_gas_config: WorkloadGasConfig,
     gas_price: u64,
 ) -> Result<(WorkloadInitGas, WorkloadPayloadGas)> {
-    info!(
+    println!(
         "Generating gas with number of coins for shared counter init = {:?}, number of coins for \
     shared counter payloads = {:?}, number of transfer object token = {:?}, number of coins for \
     transfer object payloads = {:?}",

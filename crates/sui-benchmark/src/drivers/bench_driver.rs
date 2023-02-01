@@ -198,6 +198,7 @@ impl BenchDriver {
         if qps == 0 {
             return vec![];
         }
+        println!("Error was happening around this time before");
         let mut payloads = workload_info
             .workload
             .make_test_payloads(

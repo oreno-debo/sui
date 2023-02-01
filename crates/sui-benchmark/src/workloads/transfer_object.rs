@@ -154,6 +154,23 @@ impl Workload<dyn Payload> for TransferObjectWorkload {
         _proxy: Arc<dyn ValidatorProxy + Sync + Send>,
         system_state_observer: Arc<SystemStateObserver>,
     ) -> Vec<Box<dyn Payload>> {
+        println!("num_payloads: {}", num_payloads);
+        println!(
+            "transfer_tokens: {:?}",
+            payload_config.transfer_tokens.len()
+        );
+        println!(
+            "transfer_object_payload_gas: {:?}",
+            payload_config.transfer_object_payload_gas.len()
+        );
+        println!(
+            "shared_counter_payload_gas: {:?}",
+            payload_config.shared_counter_payload_gas.len()
+        );
+        println!(
+            "delegation_payload_gas: {:?}",
+            payload_config.delegation_payload_gas.len()
+        );
         let mut gas_by_address: HashMap<SuiAddress, Vec<Gas>> = HashMap::new();
         for gas in payload_config.transfer_object_payload_gas.iter() {
             gas_by_address
@@ -178,8 +195,18 @@ impl Workload<dyn Payload> for TransferObjectWorkload {
             .collect();
         refs.iter()
             .map(|(g, t)| {
+                println!("gas items {}", g.len());
                 let from = t.1;
-                let to = g.iter().find(|x| x.1 != from).unwrap().1;
+                println!("from: {}", from);
+                let to = g
+                    .iter()
+                    .find(|x| {
+                        println!("gas obj id {}", x.1);
+                        x.1 != from
+                    })
+                    .unwrap()
+                    .1;
+                println!("returned and found one gas");
                 Box::new(TransferObjectTestPayload {
                     transfer_object: t.0,
                     transfer_from: from.get_owner_address().unwrap(),

@@ -1,5 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
+use crate::benchmark_setup::ProxyGasAndCoin;
 use crate::options::{Opts, RunSpec};
 use crate::system_state_observer::SystemStateObserver;
 use crate::util::generate_all_gas_for_test;
@@ -14,7 +15,6 @@ use crate::workloads::{
 };
 use crate::ValidatorProxy;
 use anyhow::Result;
-use move_core_types::language_storage::TypeTag;
 use std::sync::Arc;
 
 pub enum WorkloadConfiguration {
@@ -27,10 +27,7 @@ pub enum WorkloadConfiguration {
 impl WorkloadConfiguration {
     pub async fn configure(
         &self,
-        gas: Gas,
-        pay_coin: Gas,
-        pay_coin_type_tag: TypeTag,
-        proxies: Vec<Arc<dyn ValidatorProxy + Send + Sync>>,
+        proxy_gas_and_coins: Vec<ProxyGasAndCoin>,
         opts: &Opts,
         system_state_observer: Arc<SystemStateObserver>,
     ) -> Result<Vec<(Arc<dyn ValidatorProxy + Send + Sync>, Vec<WorkloadInfo>)>> {
@@ -55,10 +52,7 @@ impl WorkloadConfiguration {
                         shared_counter_hotness_factor,
                         target_qps,
                         in_flight_ratio,
-                        gas,
-                        pay_coin,
-                        pay_coin_type_tag,
-                        proxies,
+                        proxy_gas_and_coins,
                         system_state_observer,
                     )
                     .await
@@ -73,10 +67,7 @@ impl WorkloadConfiguration {
                         shared_counter_hotness_factor,
                         target_qps,
                         in_flight_ratio,
-                        gas,
-                        pay_coin,
-                        pay_coin_type_tag,
-                        proxies,
+                        proxy_gas_and_coins,
                         system_state_observer,
                     )
                     .await
@@ -95,10 +86,7 @@ impl WorkloadConfiguration {
         shared_counter_hotness_factor: u32,
         target_qps: u64,
         in_flight_ratio: u64,
-        gas: Gas,
-        coin: Gas,
-        coin_type_tag: TypeTag,
-        proxies: Vec<Arc<dyn ValidatorProxy + Send + Sync>>,
+        proxy_gas_and_coins: Vec<ProxyGasAndCoin>,
         system_state_observer: Arc<SystemStateObserver>,
     ) -> Result<Vec<(Arc<dyn ValidatorProxy + Send + Sync>, Vec<WorkloadInfo>)>> {
         Ok(configure_combined_mode_helper(
@@ -109,10 +97,7 @@ impl WorkloadConfiguration {
             transfer_object_weight,
             num_transfer_accounts,
             delegation_weight,
-            proxies,
-            gas,
-            coin,
-            coin_type_tag,
+            proxy_gas_and_coins,
             num_workers,
             system_state_observer,
         )
@@ -129,10 +114,7 @@ impl WorkloadConfiguration {
         shared_counter_hotness_factor: u32,
         target_qps: u64,
         in_flight_ratio: u64,
-        gas: Gas,
-        coin: Gas,
-        coin_type_tag: TypeTag,
-        proxies: Vec<Arc<dyn ValidatorProxy + Send + Sync>>,
+        proxy_gas_and_coins: Vec<ProxyGasAndCoin>,
         system_state_observer: Arc<SystemStateObserver>,
     ) -> Result<Vec<(Arc<dyn ValidatorProxy + Send + Sync>, Vec<WorkloadInfo>)>> {
         let shared_counter_weight_ratio = shared_counter_weight as f32
@@ -197,7 +179,7 @@ impl WorkloadConfiguration {
 
         let mut proxy_workloads: Vec<(Arc<dyn ValidatorProxy + Send + Sync>, Vec<WorkloadInfo>)> =
             Vec::new();
-        let num_proxies = proxies.len();
+        let num_proxies = proxy_gas_and_coins.len();
 
         let shared_counter_workload_init_gas_config_chunks =
             split_workload(&shared_counter_workload_init_gas_config, num_proxies);
@@ -209,7 +191,7 @@ impl WorkloadConfiguration {
             split_workload(&transfer_object_workload_payload_gas_config, num_proxies);
         let delegation_gas_configs_chunks = split_workload(&delegation_gas_configs, num_proxies);
 
-        for (i, proxy) in proxies.iter().enumerate() {
+        for (i, proxy_gas_and_coin) in proxy_gas_and_coins.iter().enumerate() {
             let mut workloads = vec![];
             let workload_gas_config = WorkloadGasConfig {
                 shared_counter_workload_init_gas_config:
@@ -226,16 +208,16 @@ impl WorkloadConfiguration {
             // as these generation is done sequentially for each proxy.
             // TODO(scale): verify stress performance does not degrade because of this.
             let (workload_init_gas, workload_payload_gas) = generate_all_gas_for_test(
-                proxies[i].clone(),
-                gas.clone(),
-                coin.clone(),
-                coin_type_tag.clone(),
+                proxy_gas_and_coin.proxy.clone(),
+                proxy_gas_and_coin.primary_gas.clone(),
+                proxy_gas_and_coin.pay_coin.clone(),
+                proxy_gas_and_coin.pay_coin_type_tag.clone(),
                 workload_gas_config,
                 *system_state_observer.reference_gas_price.borrow(),
             )
             .await?;
             if let Some(mut shared_counter_workload) = make_shared_counter_workload(
-                shared_counter_qps,
+                shared_counter_qps / num_proxies as u64,
                 shared_counter_num_workers,
                 shared_counter_max_ops,
                 WorkloadPayloadGas {
@@ -249,14 +231,14 @@ impl WorkloadConfiguration {
                     .workload
                     .init(
                         workload_init_gas,
-                        proxies[i].clone(),
+                        proxy_gas_and_coin.proxy.clone(),
                         system_state_observer.clone(),
                     )
                     .await;
                 workloads.push(shared_counter_workload);
             }
             if let Some(mut transfer_object_workload) = make_transfer_object_workload(
-                transfer_object_qps,
+                transfer_object_qps / num_proxies as u64,
                 transfer_object_num_workers,
                 transfer_object_max_ops,
                 num_transfer_accounts,
@@ -273,14 +255,14 @@ impl WorkloadConfiguration {
                         WorkloadInitGas {
                             shared_counter_init_gas: vec![],
                         },
-                        proxies[i].clone(),
+                        proxy_gas_and_coin.proxy.clone(),
                         system_state_observer.clone(),
                     )
                     .await;
                 workloads.push(transfer_object_workload);
             }
             if let Some(delegation_workload) = make_delegation_workload(
-                delegate_qps,
+                delegate_qps / num_proxies as u64,
                 delegate_num_workers,
                 delegate_max_ops,
                 WorkloadPayloadGas {
@@ -293,7 +275,7 @@ impl WorkloadConfiguration {
                 workloads.push(delegation_workload);
             }
 
-            proxy_workloads.push((proxy.clone(), workloads));
+            proxy_workloads.push((proxy_gas_and_coin.proxy.clone(), workloads));
         }
         Ok(proxy_workloads)
     }
@@ -307,10 +289,7 @@ pub async fn configure_combined_mode_helper(
     transfer_object_weight: u32,
     num_transfer_accounts: u64,
     delegation_weight: u32,
-    proxies: Vec<Arc<dyn ValidatorProxy + Send + Sync>>,
-    gas: Gas,
-    coin: Gas,
-    coin_type_tag: TypeTag,
+    proxy_gas_and_coins: Vec<ProxyGasAndCoin>,
     num_workers: u64,
     system_state_observer: Arc<SystemStateObserver>,
 ) -> std::result::Result<
@@ -354,7 +333,7 @@ pub async fn configure_combined_mode_helper(
 
     let mut proxy_workloads: Vec<(Arc<dyn ValidatorProxy + Send + Sync>, Vec<WorkloadInfo>)> =
         Vec::new();
-    let num_proxies = proxies.len();
+    let num_proxies = proxy_gas_and_coins.len();
 
     let shared_counter_workload_init_gas_config_chunks =
         split_workload(&shared_counter_workload_init_gas_config, num_proxies);
@@ -365,7 +344,7 @@ pub async fn configure_combined_mode_helper(
     let transfer_object_workload_payload_gas_config_chunks =
         split_workload(&transfer_object_workload_payload_gas_config, num_proxies);
     let delegation_gas_configs_chunks = split_workload(&delegation_gas_configs, num_proxies);
-    for (i, proxy) in proxies.iter().enumerate() {
+    for (i, proxy_gas_and_coin) in proxy_gas_and_coins.iter().enumerate() {
         let workload_gas_config = WorkloadGasConfig {
             shared_counter_workload_init_gas_config: shared_counter_workload_init_gas_config_chunks
                 [i]
@@ -381,18 +360,19 @@ pub async fn configure_combined_mode_helper(
         // Should not have any issues sharing the same primary gas object for generation
         // as these generation is done sequentially for each proxy.
         // TODO(scale): verify stress performance does not degrade because of this.
+        println!("Generating gas objects for proxy {}", i);
         let (workload_init_gas, workload_payload_gas) = generate_all_gas_for_test(
-            proxies[i].clone(),
-            gas.clone(),
-            coin.clone(),
-            coin_type_tag.clone(),
+            proxy_gas_and_coin.proxy.clone(),
+            proxy_gas_and_coin.primary_gas.clone(),
+            proxy_gas_and_coin.pay_coin.clone(),
+            proxy_gas_and_coin.pay_coin_type_tag.clone(),
             workload_gas_config,
             *system_state_observer.reference_gas_price.borrow(),
         )
         .await?;
 
         let mut combination_workload = make_combination_workload(
-            target_qps,
+            target_qps / num_proxies as u64,
             num_workers,
             in_flight_ratio,
             num_transfer_accounts,
@@ -405,12 +385,12 @@ pub async fn configure_combined_mode_helper(
             .workload
             .init(
                 workload_init_gas,
-                proxies[i].clone(),
+                proxy_gas_and_coin.proxy.clone(),
                 system_state_observer.clone(),
             )
             .await;
 
-        proxy_workloads.push((proxy.clone(), vec![combination_workload]));
+        proxy_workloads.push((proxy_gas_and_coin.proxy.clone(), vec![combination_workload]));
     }
 
     Ok(proxy_workloads)

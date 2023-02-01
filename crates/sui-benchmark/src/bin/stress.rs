@@ -51,7 +51,7 @@ use tokio::sync::Barrier;
 async fn main() -> Result<()> {
     let opts: Opts = Opts::parse();
     let mut config = telemetry_subscribers::TelemetryConfig::new();
-    config.log_string = Some("warn".to_string());
+    config.log_string = Some("info".to_string());
     if !opts.log_path.is_empty() {
         config.log_file = Some(opts.log_path.clone());
     }
@@ -72,7 +72,7 @@ async fn main() -> Result<()> {
         // Only need to get system state from one proxy as there is only one
         // system state for the whole network.
         let mut system_state_observer =
-            SystemStateObserver::new(benchmark_setup.validator_proxies[0].clone());
+            SystemStateObserver::new(benchmark_setup.proxy_gas_and_coins[0].proxy.clone());
         system_state_observer.reference_gas_price.changed().await?;
         eprintln!(
             "Found reference gas price from system state object = {:?}",
@@ -102,10 +102,7 @@ async fn main() -> Result<()> {
 
             let proxy_workloads = workload_configuration
                 .configure(
-                    benchmark_setup.primary_gas,
-                    benchmark_setup.pay_coin,
-                    benchmark_setup.pay_coin_type_tag,
-                    benchmark_setup.validator_proxies.clone(),
+                    benchmark_setup.proxy_gas_and_coins,
                     &opts,
                     system_state_observer.clone(),
                 )
