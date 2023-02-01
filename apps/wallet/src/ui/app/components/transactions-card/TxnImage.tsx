@@ -16,38 +16,41 @@ export function TxnImage({ id, label }: { id: string; label?: string }) {
                     {label}
                 </Text>
             )}
-           
-        <div className="flex w-full gap-2">
-            <NftImage
-                borderRadius="sm"
-                size="xs"
-                name={nftMeta.name}
-                src={nftMeta.url.replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/')}
-            />
 
-            <div className="flex flex-col gap-1 justify-center break-all w-56">
-                {nftMeta.name && (
-                    <Text
-                        color="gray-90"
-                        weight="semibold"
-                        variant="subtitleSmall"
-                        truncate
-                    >
-                        {nftMeta.name}
-                    </Text>
-                )}
-                {nftMeta.description && (
-                    <Text
-                        color="steel-darker"
-                        weight="medium"
-                        variant="subtitleSmall"
-                        truncate
-                    >
-                        {nftMeta.description}
-                    </Text>
-                )}
+            <div className="flex w-full gap-2">
+                <NftImage
+                    borderRadius="sm"
+                    size="xs"
+                    name={nftMeta.name}
+                    src={nftMeta.url.replace(
+                        /^ipfs:\/\//,
+                        'https://ipfs.io/ipfs/'
+                    )}
+                />
+
+                <div className="flex flex-col gap-1 justify-center break-all w-56">
+                    {nftMeta.name && (
+                        <Text
+                            color="gray-90"
+                            weight="semibold"
+                            variant="subtitleSmall"
+                            truncate
+                        >
+                            {nftMeta.name}
+                        </Text>
+                    )}
+                    {nftMeta.description && (
+                        <Text
+                            color="steel-darker"
+                            weight="medium"
+                            variant="subtitleSmall"
+                            truncate
+                        >
+                            {nftMeta.description}
+                        </Text>
+                    )}
+                </div>
             </div>
-        </div>
         </div>
     ) : null;
 }
