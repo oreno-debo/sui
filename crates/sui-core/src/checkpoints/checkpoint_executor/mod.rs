@@ -21,7 +21,7 @@
 use std::{
     collections::HashMap,
     sync::Arc,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime},
 };
 
 use futures::stream::FuturesOrdered;
@@ -154,7 +154,8 @@ impl CheckpointExecutor {
                 }
                 // Check for newly synced checkpoints from StateSync.
                 Ok(checkpoint) = self.mailbox.recv() => {
-                    let latency = SystemTime::now() - checkpoint.timestamp();
+                    if let Some(latency) = SystemTime::now().checked_sub(checkpoint.summary.timestamp()) {
+                    }
 
                 }
             }

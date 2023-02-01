@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::histogram::Histogram;
+use mysten_metrics::histogram::Histogram;
 use prometheus::{
     register_int_counter_with_registry, register_int_gauge_with_registry, IntCounter, IntGauge,
     Registry,
@@ -13,7 +13,7 @@ pub struct CheckpointExecutorMetrics {
     pub checkpoint_exec_errors: IntCounter,
     pub checkpoint_exec_epoch: IntGauge,
     pub checkpoint_transaction_count: Histogram,
-    pub checkpoint_datasync_latency: Histogram,
+    pub checkpoint_datasync_age: Histogram,
 }
 
 impl CheckpointExecutorMetrics {
@@ -42,6 +42,12 @@ impl CheckpointExecutorMetrics {
                 "Number of transactions in the checkpoint",
                 registry,
             ),
+            checkpoint_datasync_age: Histogram::new_in_registry(
+                "checkpoint_datasync_age",
+                "Age of checkpoints when they arrive for execution",
+                registry,
+            )
+            .unwrap(),
         };
         Arc::new(this)
     }

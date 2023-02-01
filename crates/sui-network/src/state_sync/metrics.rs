@@ -44,6 +44,7 @@ struct Inner {
     highest_known_checkpoint: IntGauge,
     highest_verified_checkpoint: IntGauge,
     highest_synced_checkpoint: IntGauge,
+    checkpoint_summary_age: Histogram,
 }
 
 impl Inner {

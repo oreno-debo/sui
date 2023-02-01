@@ -4,7 +4,7 @@
 use fastcrypto::encoding::{Base58, Encoding, Hex};
 use std::fmt::{Debug, Display, Formatter};
 use std::slice::Iter;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::base_types::ExecutionDigests;
 use crate::committee::{EpochId, StakeUnit};
